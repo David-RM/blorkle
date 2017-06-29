@@ -12,6 +12,8 @@ canvas {
 <body onload="startGame()">
 <p id="demo1"></p>
 <p id="demo2"></p>
+<p>Graphic shows one object orbiting another according to a realistic inverse-square
+  law.</p>
 
 <script>
 
@@ -22,6 +24,7 @@ function startGame() {
 	thing1 = new component(30, 30, "red", 320, 240);
 	thing2 = new component(30, 30, "blue", 100, 240);
   thing2.yV = 1.5;
+  thing1.mass = 1;
   myGameArea.start();
 }
 
@@ -49,6 +52,7 @@ function component(width, height, color, x, y) {
     this.xA = 0;
     this.yA = 0;
     this.angle = 0;
+    this.mass = 1;
 
     this.update = function() {
         ctx = myGameArea.context;
@@ -78,8 +82,10 @@ function updateGameArea() {
   myGameArea.clear();
   thing2.xR = (thing2.x-thing1.x) / sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y);
   thing2.yR = (thing2.y-thing1.y) / sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y);
-  thing2.xA = -thing2.xR * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
-  thing2.yA = -thing2.yR * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
+  thing2.xF = -thing2.xR  * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
+  thing2.yF = -thing2.yR  * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
+  thing2.xA = thing2.xF / thing2.mass;
+  thing2.yA = thing2.yF / thing2.mass;
 	thing1.newPos();
   thing1.update();
 	thing2.newPos();
@@ -92,4 +98,5 @@ function updateGameArea() {
 </script>
 
 </body>
+
 </html>
