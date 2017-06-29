@@ -12,18 +12,19 @@ canvas {
 <body onload="startGame()">
 <p id="demo1"></p>
 <p>Graphic shows multiple objects of different masses orbiting each other.</p>
-<p>There is no collision detection as of yet.</p>
-
+<p>There is also simple collision detection (bouncing).</p>
+<img id="ship01" width="50" height="50" src="ship01.png" alt="The Ship" style="display:none">
 <script>
 
 var thing = [];
 var bigG = 30;
 
-function makeNewObject(objMass, objXPos, objYPos, objWidth, objHeight, objColor) {
+function makeNewObject(objMass, objXPos, objYPos, objWidth, objHeight, objColor, objShape) {
   thing.push({
     width : objWidth,
     height : objHeight,
     color : objColor,
+    shape : objShape,
     mass : objMass,
     xPos : objXPos,
     yPos : objYPos,
@@ -38,14 +39,15 @@ function makeNewObject(objMass, objXPos, objYPos, objWidth, objHeight, objColor)
 }
 
 function startGame() {
+  makeNewObject(2, 300, 100, 30, 30, "blue", "circle")
+  makeNewObject(30, 400, 300, 30, 30, "red", "circle")
+  makeNewObject(3, 100, 300, 30, 30, "green", "circle")
+  makeNewObject(2, 400, 500, 30, 30, "black", "circle")
 
-  makeNewObject(1, 50, 200, 30, 30, "blue")
-  makeNewObject(10, 300, 100, 30, 30, "red")
-  makeNewObject(2, 500, 300, 30, 30, "green")
-  makeNewObject(1, 400, 400, 30, 30, "black")
-
-  thing[0].yVel = 0.2;
-  thing[3].xVel = 0.1
+  thing[0].xVel = -2;
+  thing[1].yVel = -0.2;
+  thing[2].yVel = 2;
+  thing[3].xVel = 2;
 
   myGameArea.start();
 }
@@ -89,17 +91,19 @@ function findVel() {
         // Find product of the two masses.
         var massProd = thing[index1].mass * thing[index2].mass;
         // Find x and y Force components.
+          // Include repulsive force for collisions.
         var xForce = - uVecX * bigG * massProd / Math.pow(sqrtSS,2);
+          xForce += uVecX * 1e4 * massProd / Math.pow(-10 + sqrtSS,4);
         var yForce = - uVecY * bigG * massProd / Math.pow(sqrtSS,2);
+          yForce += uVecY * 1e4 * massProd / Math.pow(-10 + sqrtSS,4);
         // Add these Force components to the total acceleration.
         thing[index1].xAcc += xForce / thing[index1].mass;
         thing[index1].yAcc += yForce / thing[index1].mass;
-        if (index1 == 2 && index2 == 0) {document.getElementById("demo1").innerHTML = sqrtSS}
+        //if (index1 == 2 && index2 == 0) {document.getElementById("demo1").innerHTML = sqrtSS}
       }
     }
     thing[index1].xVel += thing[index1].xAcc;
     thing[index1].yVel += thing[index1].yAcc;
-
   }
 }
 
@@ -112,7 +116,18 @@ function updateThing() {
     ctx.translate(thing[idx].xPos, thing[idx].yPos);
     ctx.rotate(thing[idx].angle);
     ctx.fillStyle = thing[idx].color;
-    ctx.fillRect(thing[idx].width / -2, thing[idx].height / -2, thing[idx].width, thing[idx].height);
+    if (thing[idx].shape == "square") {
+      ctx.fillRect(thing[idx].width / -2, thing[idx].height / -2, thing[idx].width, thing[idx].height);
+    }
+    else if (thing[idx].shape == "circle") {
+      ctx.beginPath();
+      ctx.arc(0, 0, thing[idx].width/2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    else if (thing[idx].shape == "image") {
+       var img = document.getElementById("ship01");
+       ctx.drawImage(img,0,0,50,50);
+    }
     ctx.restore();
   }
 }
