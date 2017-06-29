@@ -39,7 +39,7 @@ function makeNewObject(objMass, objXPos, objYPos, objWidth, objHeight, objColor,
 }
 
 function startGame() {
-  makeNewObject(2, 300, 100, 30, 30, "blue", "circle")
+  makeNewObject(0.1, 300, 100, 30, 30, "blue", "ship")
   makeNewObject(30, 400, 300, 30, 30, "red", "circle")
   makeNewObject(3, 100, 300, 30, 30, "green", "circle")
   makeNewObject(2, 400, 500, 30, 30, "black", "circle")
@@ -60,6 +60,13 @@ var myGameArea = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.interval = setInterval(updateGameArea, 20);
+        window.addEventListener('keydown', function (e) {
+            myGameArea.keys = (myGameArea.keys || []);
+            myGameArea.keys[e.keyCode] = true;
+        })
+        window.addEventListener('keyup', function (e) {
+            myGameArea.keys[e.keyCode] = false;
+        })
     },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -125,8 +132,15 @@ function updateThing() {
       ctx.fill();
     }
     else if (thing[idx].shape == "image") {
-       var img = document.getElementById("ship01");
-       ctx.drawImage(img,0,0,50,50);
+      var img = document.getElementById("ship01");
+      ctx.drawImage(img,0,0,50,50);
+    }
+    else if(thing[idx].shape == "ship") {
+      var shipW = thing[idx].width;
+      var shipH = thing[idx].height;
+      ctx.fillRect(shipW / -2, shipW / -2, shipW, shipH);
+      ctx.translate(0, shipW / -1.5);
+      ctx.fillRect(shipW / -4, shipW / -4, shipW/2, shipH/2);
     }
     ctx.restore();
   }
@@ -134,6 +148,13 @@ function updateThing() {
 
 function updateGameArea() {
   myGameArea.clear();
+  if (myGameArea.keys && myGameArea.keys[37]) {thing[0].angle += -0.2; }
+  if (myGameArea.keys && myGameArea.keys[39]) {thing[0].angle +=  0.2; }
+  if (myGameArea.keys && myGameArea.keys[38]) {
+    var thrust = 0.2;
+    thing[0].xVel += thrust * Math.sin(thing[0].angle);
+    thing[0].yVel -= thrust * Math.cos(thing[0].angle);
+  }
   findVel();
   updateThing();
 }
