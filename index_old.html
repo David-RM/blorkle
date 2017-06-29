@@ -10,20 +10,22 @@ canvas {
 </style>
 </head>
 <body onload="startGame()">
+<p id="demo1"></p>
+<p id="demo2"></p>
+<p>Graphic shows one object orbiting another according to a realistic inverse-square
+  law.</p>
+
 <script>
 
-var blok;
-var keys = [];
+var thing1;
+var thing2;
 
 function startGame() {
-    blok = new component(30, 30, "red", 310, 450);
-    myGameArea.start();
-	blok.hop = new sound("blok.mp3");
-	blok.leap = new sound("blokok.mp3");
-	blok.speedX = 0;
-	blok.accY = 0;
-	blok.hopping = false;
-	blok.jumping = false;
+	thing1 = new component(30, 30, "red", 320, 240);
+	thing2 = new component(30, 30, "blue", 100, 240);
+  thing2.yV = 1.5;
+  thing1.mass = 1;
+  myGameArea.start();
 }
 
 var myGameArea = {
@@ -34,124 +36,67 @@ var myGameArea = {
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.interval = setInterval(updateGameArea, 20);
-		
-		window.addEventListener('keydown', keysPressed, false);
-		window.addEventListener('keyup', keysReleased, false);
     },
     clear : function() {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 }
 
-function keysPressed(e) {
-	
-	// store an entry for every key pressed
-	keys[e.keyCode] = true;
-	
-	if (keys[65] && keys[32]) {
-		if (blok.hopping == false) {
-			blok.speedX = -5;
-			blok.speedY = -40;
-			blok.accY = 3;
-			blok.leap.play();
-			blok.hopping = true;
-		}
-	}
-	if (keys[65]) {
-		if (blok.hopping == false) {
-			blok.speedX = -5;
-			blok.speedY = -12;
-			blok.accY = 3;
-			blok.hop.play();
-			blok.hopping = true;
-		}
-	}
-	if (keys[68] && keys[32]) {
-		if (blok.hopping == false) {
-			blok.speedX = 5;
-			blok.speedY = -40;
-			blok.accY = 3;
-			blok.leap.play();
-			blok.hopping = true;
-		}
-	}
-	if (keys[68]) {
-		if (blok.hopping == false) {
-			blok.speedX = 5;
-			blok.speedY = -12;
-			blok.accY = 3;
-			blok.hop.play();
-			blok.hopping = true;
-		}
-	}
-}
-
-function keysReleased(e) {
-    // mark keys that were released
-    keys[e.keyCode] = false;
-}
-
 function component(width, height, color, x, y) {
     this.width = width;
     this.height = height;
-    this.speedX = 0;
-	this.speedY = 0;
     this.x = x;
-    this.y = y;    	
+    this.y = y;
+    this.xV = 0;
+    this.yV = 0;
+    this.xA = 0;
+    this.yA = 0;
+    this.angle = 0;
+    this.mass = 1;
+
     this.update = function() {
         ctx = myGameArea.context;
+		ctx.save();
+		ctx.translate(this.x, this.y);
+		ctx.rotate(this.angle);
         ctx.fillStyle = color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-    	}
-	this.newPos = function() {
-		this.x += this.speedX;
-		this.y += this.speedY;
-		if (this.y >= 450) { 		// This keeps the blok from falling below the screen.
-			this.y = 450;
-			this.speedY = 0;
-			this.speedX = 0;
-			blok.hopping = false;
-			//blok.jumping = false;
-		}
+        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
+		ctx.restore();
+    }
+    this.newPos = function() {
+      this.xV += this.xA;
+      this.yV += this.yA;
+      this.x += this.xV;
+      this.y += this.yV;
 	}
+}
+
+function sqrtSumSquare(part1, part2) {
+  square1 = Math.pow(part1,2);
+  square2 = Math.pow(part2,2);
+  sumSquares = square1 + square2;
+  return Math.sqrt(sumSquares);
 }
 
 function updateGameArea() {
-    myGameArea.clear();
-    blok.speedY += blok.accY;
-	blok.newPos();
-    blok.update();
+  myGameArea.clear();
+  thing2.xR = (thing2.x-thing1.x) / sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y);
+  thing2.yR = (thing2.y-thing1.y) / sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y);
+  thing2.xF = -thing2.xR  * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
+  thing2.yF = -thing2.yR  * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
+  thing2.xA = thing2.xF / thing2.mass;
+  thing2.yA = thing2.yF / thing2.mass;
+	thing1.newPos();
+  thing1.update();
+	thing2.newPos();
+	thing2.update();
+  document.getElementById("demo1").innerHTML = thing2.xR;
+  document.getElementById("demo2").innerHTML = thing2.yR;
 }
-
-function sound(src) {
-	var n;
-    var i = 0; 
-	this.sound = new Array(5);
-	for (n = 0; n < 5; n++) {
-    	this.sound[n] = document.createElement("audio");
-    	this.sound[n].src = src;
-    	this.sound[n].setAttribute("preload", "auto");
-    	this.sound[n].setAttribute("controls", "none");
-    	this.sound[n].style.display = "none";
-    	document.body.appendChild(this.sound[n]);
-	}
-    this.play = function(){
-        this.sound[i].play();
-		i++;
-		if (i > 4) {i = 0};
-    }
-
-   // this.stop = function(){
-   //     this.sound[0].pause();
-   // }
-
-}
-
 
 
 </script>
 
-<p>blokblok version 0.0.2 by David RM of Six Before Breakfast</p>
 </body>
-</html>
 
+</html>

@@ -11,28 +11,50 @@ canvas {
 </head>
 <body onload="startGame()">
 <p id="demo1"></p>
-<p id="demo2"></p>
-<p>Graphic shows one object orbiting another according to a realistic inverse-square
-  law.</p>
+<p>Graphic shows multiple objects of different masses orbiting each other.</p>
+<p>There is no collision detection as of yet.</p>
 
 <script>
 
-var thing1;
-var thing2;
+var thing = [];
+var bigG = 30;
+
+function makeNewObject(objMass, objXPos, objYPos, objWidth, objHeight, objColor) {
+  thing.push({
+    width : objWidth,
+    height : objHeight,
+    color : objColor,
+    mass : objMass,
+    xPos : objXPos,
+    yPos : objYPos,
+    angle : 0,
+    xRng : 0,
+    yRng : 0,
+    xAcc : 0,
+    yAcc : 0,
+    xVel : 0,
+    yVel : 0
+  })
+}
 
 function startGame() {
-	thing1 = new component(30, 30, "red", 320, 240);
-	thing2 = new component(30, 30, "blue", 100, 240);
-  thing2.yV = 1.5;
-  thing1.mass = 1;
+
+  makeNewObject(1, 50, 200, 30, 30, "blue")
+  makeNewObject(10, 300, 100, 30, 30, "red")
+  makeNewObject(2, 500, 300, 30, 30, "green")
+  makeNewObject(1, 400, 400, 30, 30, "black")
+
+  thing[0].yVel = 0.2;
+  thing[3].xVel = 0.1
+
   myGameArea.start();
 }
 
 var myGameArea = {
     canvas : document.createElement("canvas"),
     start : function() {
-        this.canvas.width = 640;
-        this.canvas.height = 480;
+        this.canvas.width = 800;
+        this.canvas.height = 600;
         this.context = this.canvas.getContext("2d");
         document.body.insertBefore(this.canvas, document.body.childNodes[0]);
         this.interval = setInterval(updateGameArea, 20);
@@ -42,61 +64,66 @@ var myGameArea = {
     }
 }
 
-function component(width, height, color, x, y) {
-    this.width = width;
-    this.height = height;
-    this.x = x;
-    this.y = y;
-    this.xV = 0;
-    this.yV = 0;
-    this.xA = 0;
-    this.yA = 0;
-    this.angle = 0;
-    this.mass = 1;
-
-    this.update = function() {
-        ctx = myGameArea.context;
-		ctx.save();
-		ctx.translate(this.x, this.y);
-		ctx.rotate(this.angle);
-        ctx.fillStyle = color;
-        ctx.fillRect(this.width / -2, this.height / -2, this.width, this.height);
-		ctx.restore();
-    }
-    this.newPos = function() {
-      this.xV += this.xA;
-      this.yV += this.yA;
-      this.x += this.xV;
-      this.y += this.yV;
-	}
+function sqrtSumSquare(xPart, yPart) {
+  var square1 = Math.pow(xPart,2);
+  var square2 = Math.pow(yPart,2);
+  return Math.sqrt(square1 + square2);
 }
 
-function sqrtSumSquare(part1, part2) {
-  square1 = Math.pow(part1,2);
-  square2 = Math.pow(part2,2);
-  sumSquares = square1 + square2;
-  return Math.sqrt(sumSquares);
+function findVel() {
+  for (var index1 in thing) {
+    // Reset object's acceleration to 0.
+    thing[index1].xAcc = 0;
+    thing[index1].yAcc = 0;
+    for (var index2 in thing) {
+      if (index1 != index2) {
+        // Find xRange and yRange between objects.
+        thing[index1].xRng = thing[index1].xPos - thing[index2].xPos;
+        thing[index1].yRng = thing[index1].yPos - thing[index2].yPos;
+        // Find diagonal distance (square-root of sum of squares).
+        var sqrtSS = sqrtSumSquare(thing[index1].xRng, thing[index1].yRng);
+        if (sqrtSS < 20) {sqrtSS = 20}
+        // Find x and y components of unit vector.
+        var uVecX = thing[index1].xRng / sqrtSS;
+        var uVecY = thing[index1].yRng / sqrtSS;
+        // Find product of the two masses.
+        var massProd = thing[index1].mass * thing[index2].mass;
+        // Find x and y Force components.
+        var xForce = - uVecX * bigG * massProd / Math.pow(sqrtSS,2);
+        var yForce = - uVecY * bigG * massProd / Math.pow(sqrtSS,2);
+        // Add these Force components to the total acceleration.
+        thing[index1].xAcc += xForce / thing[index1].mass;
+        thing[index1].yAcc += yForce / thing[index1].mass;
+        if (index1 == 2 && index2 == 0) {document.getElementById("demo1").innerHTML = sqrtSS}
+      }
+    }
+    thing[index1].xVel += thing[index1].xAcc;
+    thing[index1].yVel += thing[index1].yAcc;
+
+  }
+}
+
+function updateThing() {
+  for (var idx in thing) {
+    thing[idx].xPos += thing[idx].xVel;
+    thing[idx].yPos += thing[idx].yVel;
+    ctx = myGameArea.context;
+    ctx.save();
+    ctx.translate(thing[idx].xPos, thing[idx].yPos);
+    ctx.rotate(thing[idx].angle);
+    ctx.fillStyle = thing[idx].color;
+    ctx.fillRect(thing[idx].width / -2, thing[idx].height / -2, thing[idx].width, thing[idx].height);
+    ctx.restore();
+  }
 }
 
 function updateGameArea() {
   myGameArea.clear();
-  thing2.xR = (thing2.x-thing1.x) / sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y);
-  thing2.yR = (thing2.y-thing1.y) / sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y);
-  thing2.xF = -thing2.xR  * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
-  thing2.yF = -thing2.yR  * 1e3 / Math.pow((sqrtSumSquare(thing2.x-thing1.x, thing2.y-thing1.y)),2);
-  thing2.xA = thing2.xF / thing2.mass;
-  thing2.yA = thing2.yF / thing2.mass;
-	thing1.newPos();
-  thing1.update();
-	thing2.newPos();
-	thing2.update();
-  document.getElementById("demo1").innerHTML = thing2.xR;
-  document.getElementById("demo2").innerHTML = thing2.yR;
+  findVel();
+  updateThing();
 }
 
 
 </script>
-
 </body>
-
 </html>
