@@ -1,3 +1,19 @@
+## Tuesday 18th July 2017
+
+To do:
+	Add landing pads.
+	Add tags to point towards planets. 
+	Should include distance.
+	Add space background.
+	Should have slight 'parallax' effect.
+	Add visible rockets.
+	Add inelasticity to collisions.
+	Add sounds.
+	Add zoom ability.
+	Add various ships with different hit boxes.
+	Add joining ability.
+
+
 ## Thursday 29th June 2017
 
 #### 15:42

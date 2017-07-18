@@ -42,7 +42,7 @@ function startGame() {
   makeNewObject(0.1, 300, 100, 30, 30, "blue", "ship")
   makeNewObject(30, 400, 300, 30, 30, "red", "circle")
   makeNewObject(3, 100, 300, 30, 30, "green", "circle")
-  makeNewObject(2, 400, 500, 30, 30, "black", "circle")
+  makeNewObject(10, 400, 500, 30, 30, "black", "circle")
 
   thing[0].xVel = -2;
   thing[1].yVel = -0.2;
@@ -115,6 +115,9 @@ function findVel() {
 }
 
 function updateThing() {
+  contxt = myGameArea.context;
+  contxt.save();
+  contxt.translate(-thing[0].xPos + 400, -thing[0].yPos + 300);
   for (var idx in thing) {
     thing[idx].xPos += thing[idx].xVel;
     thing[idx].yPos += thing[idx].yVel;
@@ -144,6 +147,7 @@ function updateThing() {
     }
     ctx.restore();
   }
+  contxt.restore();
 }
 
 function updateGameArea() {
@@ -158,7 +162,6 @@ function updateGameArea() {
   findVel();
   updateThing();
 }
-
 
 </script>
 </body>
